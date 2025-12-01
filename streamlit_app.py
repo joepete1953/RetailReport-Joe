@@ -8,7 +8,6 @@ from openai import OpenAI
 from datetime import datetime
 
 # -------------------------- Load secrets / env --------------------------
-# Just pulling in credentials from Streamlit's secrets + .env
 load_dotenv()
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 HASHED_PASSWORD = st.secrets["HASHED_PASSWORD"].encode("utf-8")
@@ -20,18 +19,16 @@ st.set_page_config(
     layout="wide"
 )
 
-# -------------------------- Styles (custom CSS) --------------------------
-# Added a bunch of styling tweaks to make the UI look much better.
-# Tried to keep it clean and readable instead of overly complicated.
+# -------------------------- Base CSS (global) --------------------------
 st.markdown("""
 <style>
-
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
 
 html, body, [class*="css"] {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins', sans-serif !important;
 }
 
+/* HEADER STYLING */
 .ultra-header {
     background: linear-gradient(135deg, #7c3aed, #4c1d95, #db2777, #f59e0b);
     background-size: 350% 350%;
@@ -47,6 +44,7 @@ html, body, [class*="css"] {
     100% { background-position: 0% 50%; }
 }
 
+/* GLASS CARD */
 .glass-card {
     background: rgba(255,255,255,0.14);
     padding: 24px;
@@ -55,6 +53,7 @@ html, body, [class*="css"] {
     margin-bottom: 20px;
 }
 
+/* BUTTONS */
 .stButton > button {
     background: linear-gradient(90deg, #6d28d9, #db2777);
     color: #fff;
@@ -62,25 +61,26 @@ html, body, [class*="css"] {
     padding: 10px 22px;
     border-radius: 10px;
     font-weight: 600;
+    transition: 0.15s;
 }
 .stButton > button:hover {
     opacity: 0.95;
     transform: scale(1.02);
 }
 
+/* HISTORY CARD */
 .history-item {
     background: rgba(255,255,255,0.12);
     padding: 15px;
     border-radius: 12px;
     margin-bottom: 12px;
 }
-
 </style>
 """, unsafe_allow_html=True)
 
-
-# -------------------------- Retail DB Schema --------------------------
-# Left this simple since it's only for reference in the schema tab.
+# ======================================================================
+#                           RETAIL DB SCHEMA
+# ======================================================================
 DATABASE_SCHEMA = """
 Retail Database (Simplified)
 
@@ -95,123 +95,137 @@ Fact:
 - OrderDetail(orderid, customerid, productid, orderdate, quantityordered)
 """
 
-
-# -------------------------- Login Logic --------------------------
+# ======================================================================
+#                           LOGIN SCREEN (THEME A)
+# ======================================================================
 def login_screen():
-    # Fullscreen background with animated gradient
+
+    # Neon bubble cinematic CSS
     st.markdown("""
     <style>
-    
+
     body {
-        background: linear-gradient(-45deg, #ff9a9e, #fad0c4, #fad0c4, #fbc2eb, #a18cd1, #fbc2eb);
-        background-size: 600% 600%;
-        animation: gradientBG 18s ease infinite;
-    }
-    @keyframes gradientBG {
-        0% {background-position: 0% 50%;}
-        50% {background-position: 100% 50%;}
-        100% {background-position: 0% 50%;}
+        background: radial-gradient(circle at top left, #0f0f23, #08080f, #000000);
+        overflow: hidden;
     }
 
-    .login-container {
-        margin-top: 10vh;
-        display: flex;
-        justify-content: center;
+    /* Floating bubbles */
+    .bubble {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(138, 43, 226, 0.25);
+        box-shadow: 0 0 18px rgba(138, 43, 226, 0.45);
+        animation: floatUp 14s infinite ease-in;
     }
 
-    .welcome-card {
-        width: 480px;
-        padding: 32px;
+    @keyframes floatUp {
+        0% { transform: translateY(0) scale(0.9); opacity: 0.8; }
+        50% { transform: translateY(-400px) scale(1.1); opacity: 0.5; }
+        100% { transform: translateY(-800px) scale(0.8); opacity: 0; }
+    }
+
+    .bubble:nth-child(1) { left: 5%; width: 80px; height: 80px; animation-duration: 13s; }
+    .bubble:nth-child(2) { left: 22%; width: 60px; height: 60px; animation-duration: 11s; }
+    .bubble:nth-child(3) { left: 48%; width: 120px; height: 120px; animation-duration: 15s; }
+    .bubble:nth-child(4) { left: 72%; width: 90px; height: 90px; animation-duration: 10s; }
+    .bubble:nth-child(5) { left: 88%; width: 70px; height: 70px; animation-duration: 16s; }
+
+    /* LOGIN CARD */
+    .login-box {
+        width: 430px;
+        padding: 38px;
+        margin: 12vh auto;
+        background: rgba(255,255,255,0.15);
         border-radius: 18px;
-        background: rgba(255,255,255,0.22);
-        box-shadow: 0 8px 30px rgba(0,0,0,0.18);
-        backdrop-filter: blur(12px);
+        backdrop-filter: blur(18px);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
         animation: fadeIn 1.2s ease;
     }
 
     @keyframes fadeIn {
-        from {opacity: 0; transform: translateY(12px);}
-        to {opacity: 1; transform: translateY(0);}
+        from { opacity: 0; transform: translateY(14px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 
-    .title {
+    .login-title {
         text-align: center;
         font-size: 32px;
         font-weight: 700;
-        padding-bottom: 10px;
+        color: white;
+        margin-bottom: 10px;
     }
 
-    .subtitle {
+    .login-sub {
         text-align: center;
-        font-size: 16px;
-        color: #2d2d2d;
-        padding-bottom: 28px;
+        color: #d4d4d4;
+        margin-bottom: 28px;
+        font-size: 15px;
     }
 
-    .logo-circle {
-        width: 80px;
-        height: 80px;
-        background: linear-gradient(135deg, #a855f7, #ec4899);
+    .logo-glow {
+        width: 90px;
+        height: 90px;
         border-radius: 50%;
         margin: auto;
         display: flex;
         justify-content: center;
         align-items: center;
+        font-size: 42px;
         color: white;
-        font-size: 34px;
-        box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-        margin-bottom: 20px;
+        background: radial-gradient(circle, #db2777, #7c3aed);
+        box-shadow: 0 0 32px #db2777aa;
+        margin-bottom: 18px;
+        animation: pulse 2.5s infinite ease-in-out;
     }
 
-    .stButton > button {
-        background: linear-gradient(90deg, #7c3aed, #d946ef);
-        border-radius: 10px !important;
-        border: none;
-        padding: 10px 22px;
-        color: white;
-        font-weight: 600;
-        width: 100% !important;
-        box-shadow: 0 4px 14px rgba(124, 58, 237, 0.45);
-        transition: 0.15s ease;
-    }
-    .stButton > button:hover {
-        transform: scale(1.035);
+    @keyframes pulse {
+        0% { transform: scale(1); box-shadow: 0 0 28px #db2777aa; }
+        50% { transform: scale(1.06); box-shadow: 0 0 40px #7c3aedcc; }
+        100% { transform: scale(1); box-shadow: 0 0 28px #db2777aa; }
     }
 
     </style>
     """, unsafe_allow_html=True)
 
-    st.markdown("<div class='login-container'><div class='welcome-card'>", unsafe_allow_html=True)
-
+    # Bubble layer
     st.markdown("""
-        <div class='logo-circle'>🛍️</div>
-        <div class='title'>Welcome to RetailX</div>
-        <div class='subtitle'>Your AI-powered retail analytics studio</div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
     """, unsafe_allow_html=True)
 
-    password = st.text_input("Password", type="password")
+    # Login box
+    st.markdown("<div class='login-box'>", unsafe_allow_html=True)
+
+    st.markdown("""
+        <div class="logo-glow">🛍️</div>
+        <div class="login-title">RetailX Login</div>
+        <div class="login-sub">Enter your password to continue</div>
+    """, unsafe_allow_html=True)
+
+    pwd = st.text_input("Password", type="password")
 
     if st.button("Login"):
-        if password and bcrypt.checkpw(password.encode(), HASHED_PASSWORD):
+        if pwd and bcrypt.checkpw(pwd.encode(), HASHED_PASSWORD):
             st.session_state.logged_in = True
             st.rerun()
         else:
-            st.error("Incorrect password, try again.")
+            st.error("Incorrect password.")
 
-    st.markdown("</div></div>", unsafe_allow_html=True)
-
-
+    st.markdown("</div>", unsafe_allow_html=True)
 
 def require_login():
     if not st.session_state.get("logged_in", False):
         login_screen()
         st.stop()
 
-
-# -------------------------- DB helpers --------------------------
+# ======================================================================
+#                        DB + OPENAI HELPERS (unchanged)
+# ======================================================================
 @st.cache_resource
 def get_db_connection():
-    """Return a Postgres connection. Cached so it isn't recreated constantly."""
     try:
         conn = psycopg2.connect(
             f"postgresql://{st.secrets['POSTGRES_USERNAME']}:{st.secrets['POSTGRES_PASSWORD']}@"
@@ -219,105 +233,100 @@ def get_db_connection():
         )
         return conn
     except Exception as e:
-        st.error(f"Database connection failed: {e}")
+        st.error(f"DB Connection Failed: {e}")
         return None
 
-
 def run_query(sql):
-    """Run SQL and return a DataFrame."""
     conn = get_db_connection()
     try:
         return pd.read_sql_query(sql, conn)
     except Exception as e:
-        st.error(f"Error running query: {e}")
+        st.error(f"Query Error: {e}")
         return None
 
-
-# -------------------------- OpenAI helpers --------------------------
 @st.cache_resource
 def get_openai_client():
     return OpenAI(api_key=OPENAI_API_KEY)
 
-
 def extract_sql(text):
-    """Strip ```sql blocks if model adds them."""
     return re.sub(r"```sql|```", "", text).strip()
 
-
-def generate_sql(question):
-    """Convert English question into SQL based on retail schema."""
+def generate_sql(q):
     prompt = f"""
-You are helping with SQL generation for a retail dataset.
+Retail database:
 
-Schema:
 {DATABASE_SCHEMA}
 
-User question:
-{question}
+Question: {q}
 
 Rules:
-- Return ONLY SQL.
-- Use correct joins between Customer → Country → Region.
-- Convert orderdate: TO_DATE(orderdate::text, 'YYYYMMDD').
-- Add LIMIT 100 for large queries.
+- Return ONLY SQL
+- Use Customer→Country→Region joins
+- Convert orderdate using TO_DATE(orderdate::text,'YYYYMMDD')
+- Limit to 100 if large
 """
 
     try:
-        resp = get_openai_client().chat.completions.create(
+        out = get_openai_client().chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.1,
         )
-        return extract_sql(resp.choices[0].message.content)
-    except Exception as e:
-        st.error(f"OpenAI error: {e}")
+        return extract_sql(out.choices[0].message.content)
+    except:
         return None
 
-
 def generate_insights(df):
-    """Simple helper to let AI summarize a query result."""
-    prompt = f"""
-Please summarize this retail data into a few useful business insights.
-Keep it short and practical.
-
-Sample data:
-{df.head().to_string(index=False)}
-"""
-
+    prompt = f"Summarize useful retail insights:\n{df.head().to_string(index=False)}"
     try:
-        resp = get_openai_client().chat.completions.create(
+        out = get_openai_client().chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.25,
         )
-        return resp.choices[0].message.content
+        return out.choices[0].message.content
     except:
-        return "Could not generate insights."
+        return "No insights."
 
-
-# -------------------------- Main App --------------------------
+# ======================================================================
+#                             MAIN APP
+# ======================================================================
 def main():
     require_login()
 
-    # Initialize history storage
     if "history" not in st.session_state:
         st.session_state.history = []
 
-    # Header
+    # HEADER
     st.markdown("""
         <div class='ultra-header'>
             <h1 style='margin-bottom:6px;'>RetailX Ultra Studio</h1>
-            <p style='margin-top:-6px;'>AI-assisted retail analytics for insights that matter.</p>
+            <p style='margin-top:-6px;'>AI-powered retail analytics that feel magical.</p>
         </div>
     """, unsafe_allow_html=True)
 
-    # Sidebar navigation
+    # Sidebar navigation + Suggested prompts
+    st.sidebar.title("📌 Navigation")
     menu = st.sidebar.radio(
-        "Navigation",
+        "",
         ["🏠 Dashboard", "🤖 Ask AI", "💻 SQL Editor", "📜 History", "📘 Schema", "🚪 Logout"]
     )
 
-    # ------------------ Dashboard ------------------
+    st.sidebar.markdown("---")
+    st.sidebar.title("💡 Suggested Prompts")
+    suggestions = [
+        "What is total revenue by region?",
+        "Which products generate the highest sales?",
+        "Show total orders per country.",
+        "Top 10 customers by spending.",
+        "Monthly revenue trend.",
+        "Which product categories sell best?",
+    ]
+    for s in suggestions:
+        if st.sidebar.button(s):
+            st.session_state.pre_fill = s
+
+    # ---------------------- Dashboard ----------------------
     if menu == "🏠 Dashboard":
         st.markdown("### 📊 Overview")
 
@@ -329,7 +338,6 @@ def main():
         FROM orderdetail o
         JOIN product p ON p.productid = o.productid;
         """
-
         df = run_query(summary_sql)
         if df is not None:
             col1, col2, col3 = st.columns(3)
@@ -339,7 +347,6 @@ def main():
 
         st.markdown("---")
 
-        # Region revenue
         region_sql = """
         SELECT r.region,
                SUM(p.productunitprice * o.quantityordered) AS revenue
@@ -351,69 +358,65 @@ def main():
         GROUP BY r.region
         ORDER BY revenue DESC;
         """
-
         region_df = run_query(region_sql)
         if region_df is not None:
             st.write("#### Revenue by Region")
             st.bar_chart(region_df.set_index("region"))
 
-    # ------------------ Ask AI ------------------
+    # ---------------------- Ask AI ----------------------
     if menu == "🤖 Ask AI":
-        st.markdown("### 💬 Ask a question about your retail data")
+        st.markdown("### 🤖 Ask anything about your Retail data")
 
-        question = st.text_input("Your question here…")
+        q = st.text_input("Your question:", value=st.session_state.get("pre_fill", ""))
 
         if st.button("Generate SQL"):
-            sql = generate_sql(question)
+            sql = generate_sql(q)
             if sql:
                 st.code(sql, language="sql")
                 st.session_state.generated_sql = sql
-                st.session_state.latest_question = question
+                st.session_state.latest_question = q
 
         if st.session_state.get("generated_sql"):
-            sql_text = st.text_area("Edit SQL before running:", st.session_state.generated_sql, height=200)
+            sq = st.text_area("Edit SQL before running:", st.session_state.generated_sql, height=200)
 
             if st.button("Run Query"):
-                df = run_query(sql_text)
+                df = run_query(sq)
                 if df is not None:
 
-                    # Store in history
+                    # Add to history
                     st.session_state.history.append({
                         "question": st.session_state.latest_question,
-                        "sql": sql_text,
+                        "sql": sq,
                         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
                         "rows": len(df)
                     })
 
-                    st.success(f"Query returned {len(df)} rows.")
+                    st.success(f"Returned {len(df)} rows.")
                     st.dataframe(df)
 
-                    # Auto chart if numeric columns exist
-                    num_cols = df.select_dtypes(["float", "int"]).columns
-                    if len(num_cols) > 0:
-                        st.write("#### Auto Chart")
-                        st.line_chart(df[num_cols])
+                    # Auto chart
+                    nums = df.select_dtypes(["float", "int"]).columns
+                    if len(nums) > 0:
+                        st.line_chart(df[nums])
 
                     # Insights
-                    st.write("#### AI Insights")
+                    st.write("#### Insights")
                     st.info(generate_insights(df))
 
-    # ------------------ SQL Editor ------------------
+    # ---------------------- SQL Editor ----------------------
     if menu == "💻 SQL Editor":
         st.markdown("### ✏️ SQL Editor")
-        sql_text = st.text_area("Write your SQL here:", height=200)
-
+        sql_raw = st.text_area("Write your SQL:", height=200)
         if st.button("Run"):
-            df = run_query(sql_text)
+            df = run_query(sql_raw)
             if df is not None:
                 st.dataframe(df)
 
-    # ------------------ History ------------------
+    # ---------------------- History ----------------------
     if menu == "📜 History":
-        st.markdown("### 📜 Recent Queries")
-
+        st.markdown("### 📜 Query History")
         if len(st.session_state.history) == 0:
-            st.info("No query history yet.")
+            st.info("No history yet.")
         else:
             for item in reversed(st.session_state.history):
                 st.markdown(f"""
@@ -424,17 +427,17 @@ def main():
                 </div>
                 """, unsafe_allow_html=True)
 
-                if st.button(f"Re-run", key=item["timestamp"]):
+                if st.button(f"Re-run {item['timestamp']}", key=item['timestamp']):
                     df = run_query(item["sql"])
                     if df is not None:
                         st.dataframe(df)
 
-    # ------------------ Schema ------------------
+    # ---------------------- Schema ----------------------
     if menu == "📘 Schema":
         st.markdown("### 📘 Retail Database Schema")
         st.code(DATABASE_SCHEMA)
 
-    # ------------------ Logout ------------------
+    # ---------------------- Logout ----------------------
     if menu == "🚪 Logout":
         st.session_state.logged_in = False
         st.rerun()
@@ -442,4 +445,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
