@@ -134,6 +134,42 @@ Fact:
 # ======================================================================
 def login_screen():
 
+    # REMOVE Streamlit default padding + grey top bar
+    st.markdown("""
+    <style>
+
+    /* Remove Streamlit top header */
+    header[data-testid="stHeader"] {
+        height: 0 !important;
+        background: transparent !important;
+    }
+
+    /* Remove top decoration bar */
+    div[data-testid="stDecoration"] {
+        display: none !important;
+    }
+
+    /* Remove padding inside main container */
+    .block-container {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
+
+    /* Remove view container padding */
+    main[data-testid="stAppViewContainer"] {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
+
+    /* Remove the unwanted grey block */
+    div[data-testid="stAppViewBlockContainer"] {
+        padding-top: 0 !important;
+        margin-top: -80px !important;   /* key line */
+    }
+
+    </style>
+    """, unsafe_allow_html=True)
+
     # Neon bubble cinematic CSS
     st.markdown("""
     <style>
@@ -249,11 +285,6 @@ def login_screen():
             st.error("Incorrect password.")
 
     st.markdown("</div>", unsafe_allow_html=True)
-
-def require_login():
-    if not st.session_state.get("logged_in", False):
-        login_screen()
-        st.stop()
 
 # ======================================================================
 #                        DB + OPENAI HELPERS (unchanged)
