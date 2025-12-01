@@ -19,40 +19,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# REMOVE Streamlit's default top padding + grey box
-st.markdown("""
-<style>
-
-/* Remove Streamlit top blank header */
-header[data-testid="stHeader"] {
-    height: 0px !important;
-    background: transparent !important;
-}
-
-/* Remove ghost padding inside main container */
-.block-container {
-    padding-top: 0 !important;
-}
-
-/* Remove extra decoration bar */
-div[data-testid="stDecoration"] {
-    display: none !important;
-}
-
-/* Remove top space before login screen starts */
-div[data-testid="stAppViewBlockContainer"] {
-    padding-top: 0 !important;
-    margin-top: -30px !important;
-}
-
-/* Prevent Streamlit from inserting unwanted white space */
-main[data-testid="stAppViewContainer"] {
-    padding-top: 0 !important;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
 # -------------------------- Base CSS (global) --------------------------
 st.markdown("""
 <style>
@@ -285,6 +251,15 @@ def login_screen():
             st.error("Incorrect password.")
 
     st.markdown("</div>", unsafe_allow_html=True)
+
+# ======================================================================
+#                         LOGIN GUARD (REQUIRED)
+# ======================================================================
+def require_login():
+    """Force login before accessing the app."""
+    if not st.session_state.get("logged_in", False):
+        login_screen()
+        st.stop()
 
 # ======================================================================
 #                        DB + OPENAI HELPERS (unchanged)
