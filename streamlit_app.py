@@ -181,20 +181,16 @@ def login_screen():
     </style>
     """, unsafe_allow_html=True)
 
-    # Layout container
     st.markdown("<div class='login-container'><div class='welcome-card'>", unsafe_allow_html=True)
 
-    # Logo + Title
     st.markdown("""
         <div class='logo-circle'>🛍️</div>
         <div class='title'>Welcome to RetailX</div>
         <div class='subtitle'>Your AI-powered retail analytics studio</div>
     """, unsafe_allow_html=True)
 
-    # Password input
     password = st.text_input("Password", type="password")
 
-    # Login button
     if st.button("Login"):
         if password and bcrypt.checkpw(password.encode(), HASHED_PASSWORD):
             st.session_state.logged_in = True
@@ -202,7 +198,6 @@ def login_screen():
         else:
             st.error("Incorrect password, try again.")
 
-    # Close wrapper
     st.markdown("</div></div>", unsafe_allow_html=True)
 
 
